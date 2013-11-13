@@ -1,0 +1,124 @@
+#lang racket
+
+(require "./prop_calc_rewrite.rkt")
+
+(define UNSAT 'unsat)
+
+(define (panic str v) 
+  (display v)
+  (raise str))
+
+(define (map l f)
+  (if (null? l) '()
+    (cons (f (first l)) (map (rest l) f))))
+
+(define (foldl l acc f)
+  (if (null? l) acc
+    (foldl (rest l) (f (first l) acc) f)))
+
+(define (chose-variable clauses)
+  (cond 
+    ((null? clauses) (panic "No clauses!"))
+    ((null? (first clauses)) (panic "Empty clause!"))
+    ((symbol? (first (first clauses))) (first (first clauses)))
+    ((list? (first (first clauses))) (second (first (first clauses))))
+    (else (panic "Clause contains non-literal"))))
+
+(define (to-cnf clauses) 
+  (cons 'and (map clauses 
+    (lambda (clause) 
+      (if (> (length clause) 1) 
+          (cons 'or clause)
+          (first clause))))))
+
+(define (from-cnf cnf)
+  (define  (clause-from-cnf cnf)
+      (cond
+        ((symbol? cnf) (list cnf))
+        ((and (list? cnf) (not (null? cnf)))
+          (case (first cnf)
+            ((not) (list cnf))
+            ((or) (rest cnf))
+            (else (panic "Invalid CNF" cnf))))
+        (else panic "Invalid CNF" cnf)))
+  (cond 
+    ((symbol? cnf) (list (clause-from-cnf cnf)))
+    ((or (eq? cnf #t) (eq? cnf #f)) (list (list cnf)))
+    ((and (list? cnf) (not (null? cnf)))
+      (case (first cnf)
+        ((and) (map (rest cnf) clause-from-cnf))
+        (else (list (clause-from-cnf cnf)))))
+    (else (panic "Invalid CNF" cnf))))
+
+(define (apply-subst subst clauses)
+  (let* ((var (first subst))
+         (val (second subst)))
+    (map clauses (lambda (clause)
+      (map clause (lambda (lit) 
+        (cond 
+          ((symbol? lit) (if (eq? lit var) val lit))
+          ((or (eq? lit #t) (eq? lit #f)) lit)
+          ((and (list? lit) (= (length lit) 2)) 
+            (case (first lit)
+              ((not) (if (eq? (second lit) var) 
+                       (list 'not val) 
+                       lit))
+              (else (panic "Not a literal" lit))))
+          (else (panic "Not a literal" lit)))))))))
+
+(define (calc-subst unit)
+  (cond ((symbol? (first unit)) 
+          (list (first unit) '#t))
+        ((list? (first unit)) 
+         (list (second (first unit)) '#f))))
+
+(define (unit-clauses clauses)
+  (define (unit-clause? clause)
+    (cond ((and (= (length clause) 1) 
+                (symbol? (first clause))) #t)
+          ((and (= (length clause) 1)
+                (list? (first clause))) 
+            (case (first (first clause))
+              ((not) #t)
+              (else #f)))
+          (else #f)))
+  (foldl clauses '() 
+         (lambda (clause acc) 
+             (if (unit-clause? clause)
+               (append acc (list clause))
+               acc))))
+
+(define  (unit-propagate clauses)
+  (let* ((units (unit-clauses clauses))
+         (substs (foldl units '() 
+            (lambda (unit acc) 
+              (unify-binds acc (list (calc-subst unit))))))
+         (clauses (foldl substs clauses 
+            (lambda (subst acc) (apply-subst subst acc))))
+         (cnf (boolean-simplify (to-cnf clauses))))
+    (cond ((eq? cnf #f) (raise UNSAT))
+          ((eq? cnf #t) (list substs '()))
+          (else (list substs (from-cnf cnf))))))
+
+
+(define (dpll clauses assmts)
+  (let* ((x (unit-propagate clauses))
+         (new-assmts (first x))
+         (clauses (second x))
+         (assmts (append assmts new-assmts)))
+    (cond 
+      ((null? clauses) assmts)
+      (else (let* ((v (chose-variable clauses))
+                   (clauses1 (cons (list v) clauses))
+                   (clauses2 (cons (list (list 'not v)) clauses)))
+              (with-handlers ([(lambda (v) (eq? v UNSAT)) 
+                               (lambda (v) (dpll clauses2 assmts))])
+                     (dpll clauses1 assmts)))))))
+
+(define (sat-solve clauses)
+  (with-handlers ([(lambda (v) (eq? v UNSAT)) 
+                   (lambda (v) (display "UNSAT\n"))])
+    (let* ((model (dpll clauses '())))
+       (begin (display "SAT\n")
+       (display "Model:\n")
+       (display model)))))

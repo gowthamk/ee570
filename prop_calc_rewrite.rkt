@@ -1,4 +1,7 @@
 (module p1 racket
+ 
+(provide boolean-simplify)
+(provide unify-binds)
   
 (define (id x) x)
 
