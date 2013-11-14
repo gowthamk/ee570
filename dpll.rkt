@@ -1,6 +1,7 @@
 #lang racket
 
-(require "./prop_calc_rewrite.rkt")
+;;(require "./prop_calc_rewrite.rkt")
+(require "./clause_rewrite.rkt")
 
 (define UNSAT 'unsat)
 
@@ -22,7 +23,7 @@
     ((null? (first clauses)) (panic "Empty clause!"))
     ((symbol? (first (first clauses))) (first (first clauses)))
     ((list? (first (first clauses))) (second (first (first clauses))))
-    (else (panic "Clause contains non-literal"))))
+    (else (panic "Clause contains non-literal" clauses))))
 
 (define (to-cnf clauses) 
   (cons 'and (map clauses 
