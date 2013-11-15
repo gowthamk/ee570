@@ -5,11 +5,20 @@
 \usepackage{helvet}
 \usepackage{courier}
 \usepackage[linesnumbered]{algorithm2e}
+\usepackage{mathpartir}
 %Formatting Commands
 %-------------------
 \newcommand{\conj}{~\wedge~}
 \newcommand{\disj}{~\vee~}
 \newcommand{\union}{~\cup~}
+\newcommand{\E}[1]{~\exists~{#1}}
+\newcommand{\V}[1]{~\forall~{#1}}
+\newcommand{\RULE}[2]{\frac{\begin{array}{c}#1\end{array}}
+                           {\begin{array}{c}#2\end{array}}}
+\newcommand{\entails}[2]{{#1} \models {#2}}
+\newenvironment{smathpar}{
+\begin{nop}\small\begin{mathpar}}{
+\end{mathpar}\end{nop}\ignorespacesafterend}
 
 \frenchspacing
 \setlength{\pdfpagewidth}{8.5in}
@@ -50,6 +59,10 @@ problem.
 \input{introduction}
 
 \input{minsat}
+
+\input{qbf}
+
+\input{nlp}
 
 % {
 % \small

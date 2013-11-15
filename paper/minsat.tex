@@ -169,7 +169,8 @@ becomes new lower bound for second recursive call (line number 14).
 Unfortunately, the information of correct lower bound is now lost. It is
 therefore quite conceivable that second recursive call finds the formula
 satisfiable and returns a number (k') less than k as result, which is definitely
-not optimal as previous recursive calls have already found a better solution (k > k').
+not optimal as previous recursive calls have already found a better solution (k
+$>$ k').
 
 \subsection {Case when multiple satisfying assigments possible}
 Consider the example where CNF formula consists of following hard part:
@@ -191,7 +192,19 @@ case should be 3.
 
 \subsection {MinSatzEE570}
 We have corrected the anamolies described in previous section and constructed
-MinSatzEE570. Algorithm 3 describes MinSatzEE570.
+MinSatzEE570. Algorithm 3 describes MinSatzEE570. MinSatzEE570 uses a modified
+unit propagation procedure (hardUnitPropagateEE570) that forces MinSatz to
+generate interpretation for \emph{every} variable in hard part regardless of its
+relevance to satisfiability of hard clauses. When propagating a unit clause
+containing literal $l$, hardUnitPropagateEE570 behaves like hardUnitPropagate
+for clauses containing $\bar{l}$. However, for a clause ($C$) containing $l$
+along with $k$ other literals ($l_1$,$l_2$,...,$l_k$), hardUnitPropagateEE570
+removes $C$, but adds k clauses of form $l_i \disj \bar{l_i}$, where $1\le i \le
+k$. The newly added clauses are tautologies and do not contrain the
+satisfiability of formula.  However, they preserve the variables that would have
+been lost otherwise, letting MinSatz to assign interpretation that leads to
+least cost assignment.
+
 \begin{algorithm}
  \SetAlgoLined 
  \KwData{$\phi$ : Set of hard and soft CNF clauses\\
@@ -215,17 +228,6 @@ MinSatzEE570. Algorithm 3 describes MinSatzEE570.
   {\Return (LB2$\le$0)?LB:LB2}
  \caption{MinSatzEE570 ($\phi$,LB)}
 \end{algorithm}
-MinSatzEE570 uses a modified unit propagation procedure
-(hardUnitPropagateEE570) that forces MinSatz to generate interpretation for
-\emph{every} variable in hard part regardless of its relevance to satisfiability
-of hard clauses. When propagating a unit clause containing literal $l$,
-hardUnitPropagateEE570 behaves like hardUnitPropagate for clauses containing
-$\bar{l}$. However, for a clause ($C$) containing $l$ along with $k$ other
-literals ($l_1$,$l_2$,...,$l_k$), hardUnitPropagateEE570 removes $C$, but adds
-k clauses of form $l_i \disj \bar{l_i}$, where $1\le i \le k$. The newly added
-clauses are tautologies and do not contrain the satisfiability of formula.
-However, they preserve the variables that would have been lost otherwise,
-letting MinSatz to assign interpretation that leads to least cost assignment.
 
 When all soft clauses in the formula are empty, but hard part is not yet
 satisfied, it should be observed that MinSAT reduces to SAT. MinSatzEE570,
