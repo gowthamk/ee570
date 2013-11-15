@@ -68,7 +68,183 @@ shows the pseudo-code for DPLL.
  \If{$\phi$ contains empty clause}{return \{\}}
  \If{$\phi$ is empty}{return $\Gamma$}
   v := selectVariable ($\phi$)\;
-  return (DPLL ($\phi \union $ \{v\},$\Gamma$) $\disj$ 
+  \Return (DPLL ($\phi \union $ \{v\},$\Gamma$) $\disj$ 
           DPLL ($\phi \union $ \{$\neg$v\},$\Gamma$))
- \caption{DPLL : An algorithm to decide propositional SAT}
+ \caption{DPLL ($\phi$,$\Gamma$)}
 \end{algorithm}
+DPLL is, essentially, a backtracking search algorithm aided by a procedure
+called unit propagation. A unit clause is a CNF clause that contains a single
+literal ($l$). Unit propagation relies on the fact that there is only one way to
+satisfy a unit clause. For each unit clause in the set of clauses, unit
+propagation creates a new assignment necessary to satisfy that clause and
+propagates that assignment in the following way. Clauses containing literal $l$
+are removed from the set of clauses since they are already satisfied. On the
+other hand, every clause containg literal $\bar{l}$ is replaced with a clause
+with literal $\bar{l}$ removed. 
+
+MinSatz extends DPLL with lower bound on the cost of satisfied soft constraints.
+The algorithm, as described in the paper, is given below:
+\begin{algorithm}
+ \SetAlgoLined 
+ \KwData{$\phi$ : Set of hard and soft CNF clauses\\
+  $\quad\quad\;$ LB : Lower bound (Lowest cost incurred so far)}
+ \KwResult{Minimum cost of satisfied soft constraints}
+ ($\phi$) := hardUnitPropagate ($\phi$)\;
+ \If{$\phi$ contains empty clause}{return -1}
+ \If{$\phi$ is empty $\disj$ $\phi$ only contains empy soft clauses}
+    {return n-empty($\phi$)}
+ UB := n-empty($\phi$) + overestimation($\phi$)\;
+ \If{UB $\le$ LB} {\Return LB}
+ v := selectVariable ($\phi$)\;
+ LB := MinSatz ($\phi \union $ \{v\},LB)\;
+ LB := MinSatz ($\phi \union $ \{$\neg$v\},LB)\;
+ \Return LB
+ \caption{MinSatz ($\phi$,LB)}
+\end{algorithm}
+As with DPLL, MinSatz starts with unit propagation, but restricts it to hard
+clauses as soft clauses need not be necessarily satisfied. MinSatz returns if
+hard unit propagation resulted in contradiction or no more empty clauses left.
+Otherwise, it  computes an upper bound of the maximum number of soft clauses
+that are falsified (UB) if the current partial assignment is extended to a
+complete one. This number UB is then compared with the number of clauses
+falsified in the best assignment found so far (LB). If UB $\le$ LB, a better
+solution cannot be found from the current node, and MinSatz backtracks.
+Otherwise, it proceeds similar to DPLL, but while updating the lower bound with
+the best solution found so far.
+
+To compute UB, MinSatz uses a novel method to over-estimate the number of
+satisfiable soft clauses. To capture the intuition, consider the two soft
+clauses containg literals $l$ and $\bar{l}$. It it easy to see that both cannot
+be simultaneously unsatisfiable. Now, consider the case where there are two unit
+soft clauses with literals $l_1$ and $l_2$, respectively, and a hard clause
+\{$l_1$,$l_2$\}. Again, both soft clauses cannot be simultaneously unsatisfiable
+as that results in unsatisfiability of a hard clause. MinSatz constructs a graph
+G that contains a vertex for every soft clause, and an edge between two vertices
+if corresponding soft clauses cannot be simultaneously unsatisfiable (as
+described above). Observe that number of cliques in the clique partition of G
+gives an upper bound on number of soft clauses that can be rendered
+unsatisfiable if the current assignment is completed. 
+
+\subsection{Critique of MinSatz}
+A closer look at MinSatz reveals some cases where the algorithm seems to deviate
+from the expected behaviour:
+
+\subsubsection{Case when all soft clauses are empty}
+Consider the example where CNF formula consists of following hard part:
+\begin{center}
+  \(
+    (x1 \disj x2) \conj (\neg x1 \disj x2) \conj (x1 \disj \neg x2) \conj
+    (\neg x1 \disj \neg x2)
+  \)
+\end{center}
+Assume that soft part contains a single clause $\neg x1$. Clearly, the hard part
+of the formula is unsatisfiable, therefore MinSatz is expected to return -1
+(signaling error) or 0 (denoting that no soft clauses can be satisfied).
+However, MinSatz returns 1. This anamoly arises as MinSatz does not confirm if
+the current assignment can be completed to satisfiability once it finds that all
+soft clauses are empty (line number 5 of the algorithm). For the current
+example, in the recursive call where $x1$ is set to \emph{true}, the sole soft
+constraint is unsatisfied and MinSatz immediately returns 1. Further
+recursive calls where $x1$ is set to \emph{false} have 1 as the lower bound,
+which cannot be exceeded. As a result, MinSatz concludes that maximum number of
+unsatisfiable soft clauses is 1. 
+
+Notwithstanding this unexpected behaviour on CNF formulas, there is a
+well-defined sub-class of CNF formulas where approach taken by MinSatz can be
+proven correct, albeit in a non-trivial way. Such class is the class of CNF
+formulas with Horn clauses. A Horn clause is a clause that contains atmost one
+positive literal (a non-negated variable). A well-known result states that a Horn
+CNF forumla without a unit clause is always satisfiable. Since hard unit
+propagation results in a formula that does not contain unit clauses, if MinSatz
+is invoked on Horn CNF formula, it is always the case that there exists a
+satisfying assignment that completes the current assignment. It is therefore
+sound to return immediately, without checking the satisfiability of hard part,
+if there are no non-empty soft clauses.
+
+\subsection {Case when first recursive call encounters unsatisfiablility}
+Consider a point in the execution of MinSatz where lower bound found so far is a
+positive number (k). Assume that first recursive call made (at line 13)
+determines that the formula is unsatisfiable. It, therefore, returns -1, which
+becomes new lower bound for second recursive call (line number 14).
+Unfortunately, the information of correct lower bound is now lost. It is
+therefore quite conceivable that second recursive call finds the formula
+satisfiable and returns a number (k') less than k as result, which is definitely
+not optimal as previous recursive calls have already found a better solution (k > k').
+
+\subsection {Case when multiple satisfying assigments possible}
+Consider the example where CNF formula consists of following hard part:
+\begin{center}
+  \(
+    (x1 \disj x2) \conj (\neg x1 \disj x3) 
+  \)
+\end{center}
+Let soft part of the formula contain three unit clauses - $\neg x1$, $\neg x2$,
+and $\neg x3$. Consider the case when $selectVariable$ selects variable $x1$ and
+it is set to true in the subsequent recursive call. As described previously,
+unit propagation in the the recursive call immediately removes both hard clauses
+(since both are satisfied) and returns a formula with empty hard part. Since
+there are no more hard clauses, MinSatz returns 1 as only one soft constraint is
+unsatisfied under current assignment of \{$x1 \mapsto true$ \}. This is clearly
+sub-optimal as $x2$ and $x3$ can be interpreted in a way so as to make rest of
+the soft constraints unsatisfiable as well. Therefore, correct answer in this
+case should be 3.
+
+\subsection {MinSatzEE570}
+We have corrected the anamolies described in previous section and constructed
+MinSatzEE570. Algorithm 3 describes MinSatzEE570.
+\begin{algorithm}
+ \SetAlgoLined 
+ \KwData{$\phi$ : Set of hard and soft CNF clauses\\
+  $\quad\quad\;$ LB : Lower bound (Lowest cost incurred so far)}
+ \KwResult{Minimum cost of satisfied soft constraints}
+ ($\phi$) := hardUnitPropagateEE570 ($\phi$)\;
+ \If{$\phi$ contains empty clause}{return -1}
+ \If{$\phi$ is empty} {return n-empty($\phi$)}
+ \If{all soft clauses in $\phi$ are empty} {
+   \eIf {DPLL(hard($\phi$),\{\}) returns non-empty model}
+      {return n-empty($\phi$)}
+      {return -1}
+ }
+ UB := n-empty($\phi$) + overestimation($\phi$)\;
+ \If{UB $\le$ LB} {\Return LB}
+ v := selectVariable ($\phi$)\;
+ LB1 := MinSatz ($\phi \union $ \{v\},LB)\;
+ LB  := (LB1$\le$0)?LB:LB1\;
+ LB2 := MinSatz ($\phi \union $ \{$\neg$v\},LB)\;
+ \eIf{LB2 = -1 $\conj$ LB1 = -1}{\Return -1}
+  {\Return (LB2$\le$0)?LB:LB2}
+ \caption{MinSatzEE570 ($\phi$,LB)}
+\end{algorithm}
+MinSatzEE570 uses a modified unit propagation procedure
+(hardUnitPropagateEE570) that forces MinSatz to generate interpretation for
+\emph{every} variable in hard part regardless of its relevance to satisfiability
+of hard clauses. When propagating a unit clause containing literal $l$,
+hardUnitPropagateEE570 behaves like hardUnitPropagate for clauses containing
+$\bar{l}$. However, for a clause ($C$) containing $l$ along with $k$ other
+literals ($l_1$,$l_2$,...,$l_k$), hardUnitPropagateEE570 removes $C$, but adds
+k clauses of form $l_i \disj \bar{l_i}$, where $1\le i \le k$. The newly added
+clauses are tautologies and do not contrain the satisfiability of formula.
+However, they preserve the variables that would have been lost otherwise,
+letting MinSatz to assign interpretation that leads to least cost assignment.
+
+When all soft clauses in the formula are empty, but hard part is not yet
+satisfied, it should be observed that MinSAT reduces to SAT. MinSatzEE570,
+therefore calls DPLL on the remaining hard part and returns appropriate value
+depending on whether DPLL was able to find a model. Lastly, the lower bound
+calculation is adjusted for the fact that MinSAT returns -1
+
+\subsection{Implementation}
+We have implemented DPLL and MinSatzEE570 in racket (a dialect of Scheme). A
+generic term rewrite system described in \cite{rewrite} has been used to
+simplify formula during unit propagation. We evaluated MinSAT by varying the
+schemes of over-estimation between 1. A naive scheme which assumes all
+soft-constraints that are not yet satisfied or unsatisfied, to be satisfiable,
+and 2. A more intelligent scheme based on clique construction as described in
+the paper. Since DIMACS graph dataset used for evaluation in the paper requires
+large effort to parse and encode graphs as propositional formulas, we used
+relatively small and contrived examples for evaluation. We observed that second
+scheme of over-estimation marginally outperforms first scheme for examples with
+high number of mutually unsatisfiable soft constraints. Both the source code and
+data are available online for reader's peruse
+\footnote{https://github.com/gowthamk/ee570}.
+
