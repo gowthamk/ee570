@@ -1,0 +1,19 @@
+\section{Minimum Satisfiability Problem}
+\label{sec:minsat}
+
+\subsection{Introduction}
+Given a formula in propositional logic, satisfiability problem (SAT) asks
+whether there exists an assignment to literals such that the formula evaluates
+to true. SAT problem is one among the first problems to be proven NP-Complete.
+Nevertheless, there exist many decision procedures, which make use of linear
+time conversion of formula to conjunctive normal form (CNF), clause resolution,
+and other such heuristics, to effeciently solve SAT.  Since many NP-hard
+problems of practical significance can be reduced to SAT problem, an efficient
+decision procedure for SAT is imperative for effeciently solving those problems.
+
+MinSAT is an extension of SAT problem, where a formula (in CNF form) contains
+two types of clauses - hard and soft. The aim is to find an assignment to
+literals that satisfies all the hard clauses and minimizes the number of
+satisfied soft clauses. SAT is a special case of MinSAT where there are only
+hard clauses. 
+

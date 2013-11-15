@@ -1,0 +1,52 @@
+%File: main.tex
+\documentclass[letterpaper]{article}
+\usepackage{aaai}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\frenchspacing
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+\pdfinfo{
+/Title (EE570 Term Paper)
+/Author (Gowtham Kaki)}
+\setcounter{secnumdepth}{1}  
+
+\begin{document}
+
+\title{EE570 Term Paper}
+\author{Gowtham Kaki\\
+gkaki@cs.purdue.edu\\
+}
+
+\maketitle
+
+\begin{abstract}
+\begin{quote}
+This paper is a review of three papers from recent artificial intelligence
+research literature that are connected by the common theme of knowledge
+representation. The first paper \cite{minsat} defines the problem of minimum
+satisfiability (MinSAT) for propositional logic and constructs an algorithm
+based on informed bounded search of state space. Second paper \cite{qbf}
+attempts to construct an efficient decision procedure for quantified boolean
+formulas by alternating between search and clause resolution. The last paper
+\cite{nlp} is an interesting application of logics based on first-order logic to
+compress English sentences. For evaluation we implemented the MinSatz algorithm
+described in first paper utilizing the rewrite system from
+\cite{siskind-rewrite}. While we found few inconsistencies in the algorithm as
+it was described in the paper, our emperical results conclude that MinSatz is
+efficient when compared to straightforward extensions of DPLL for MinSAT
+problem.
+\end{quote}
+\end{abstract}
+
+\input{introduction}
+
+\input{minsat}
+
+% {
+% \small
+% \bibliographystyle{aaai} \small \bibliography{main}
+% }
+
+\end{document}
