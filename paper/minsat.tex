@@ -15,5 +15,60 @@ MinSAT is an extension of SAT problem, where a formula (in CNF form) contains
 two types of clauses - hard and soft. The aim is to find an assignment to
 literals that satisfies all the hard clauses and minimizes the number of
 satisfied soft clauses. SAT is a special case of MinSAT where there are only
-hard clauses. 
+hard clauses. The solution for MinSAT problem might result in a satisfying
+assignment that is completely different from that of its corresponding SAT
+problem. For instance, for the CNF formula:
+\begin{center}
+  \(
+    (x1 \, \disj \, x2) \; \conj \; (x2 \, \disj \, x3)
+ \)
+\end{center}
+Assigning \emph{true} to all literals is a solution to SAT, whereas, together
+with soft clauses $x1 \conj x2 \conj x3$, solution to MinSAT assigns
+\emph{false} to $x1$ and $x3$, and \emph{true} to $x2$ since this assignment
+results in minimum number of satisfied soft clauses after satisfying all hard
+clauses.
 
+Weighted Partial MinSAT problem is MinSAT problem where each soft clause is
+associated with certain weight. The objective is to minimize the sum of weights
+of satisfied soft clauses. The paper (\cite{minsat}) proposes a branch-and-bound
+algorithm, called \emph{MinSatz}, for Weighted Partial MinSAT equipped with a
+novel bounding technique, and reports on an emperical investigation. In the next
+sub-section, we cover some preliminaries and introduce the MinSatz algorithm as
+presented in the paper. The following sub-section is an original critique of the
+algorithm, and the final sub-section discusses our experience in implementing
+the MinSATZ algorithm.
+
+\subsection{MinSatz}
+A literal is a propositional variable or a negated propositional variable. A
+clause is a disjunction of literals. A weighted clause is a pair $(c, w)$, where
+$c$ is a clause and $w$, its weight, is a natural number or infinity. A clause is
+hard if its weight is infinity; otherwise it is soft. A Weighted Partial MinSAT
+(MaxSAT) instance is a multiset of weighted clauses $\phi =
+\{(h_1,\infty),...,(h_k,\infty),(c_1, w_1),...,(c_m, w_m)\}$, where the ﬁrst k
+clauses are hard and the last m clauses are soft. The Weighted Partial MinSAT
+problem for instance $\phi$ consists in finding an assignment with minimum cost
+satisfies all hard clauses. MinSAT problem is Weighted Partial MinSAT problem
+where weights of all soft clauses is 1. Since solution for MinSAT can be
+trivially extended to include weights, the paper as well as this review focuses
+on the exact MinSAT problem. In the following discussion, definitions for
+\emph{clique}, \emph{maximum clique} and \emph{clique partition} for an
+undirected graph follow the usual definitions and reader is referred to the
+paper for formal definitions.
+
+MinSatz can be seen as an extension to the famed Davis-Putnam-Logemann-Loveland
+(DPLL \cite{dpll}) algorithm for propositional CNF-SAT solving. Algorithm 1
+shows the pseudo-code for DPLL. 
+\begin{algorithm}
+ \SetAlgoLined 
+ \KwData{$\phi$ : Set of CNF clauses\\
+  $\quad\quad\;\Gamma$ : Current assigment to variables}
+ \KwResult{A (possibly empty) model for the formula.}
+ ($\phi$,$\Gamma$) := unitPropagate ($\phi$,$\Gamma$)\;
+ \If{$\phi$ contains empty clause}{return \{\}}
+ \If{$\phi$ is empty}{return $\Gamma$}
+  v := selectVariable ($\phi$)\;
+  return (DPLL ($\phi \union $ \{v\},$\Gamma$) $\disj$ 
+          DPLL ($\phi \union $ \{$\neg$v\},$\Gamma$))
+ \caption{DPLL : An algorithm to decide propositional SAT}
+\end{algorithm}
