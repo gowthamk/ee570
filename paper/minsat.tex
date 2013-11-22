@@ -31,7 +31,8 @@ clauses.
 
 Weighted Partial MinSAT problem is MinSAT problem where each soft clause is
 associated with certain weight. The objective is to minimize the sum of weights
-of satisfied soft clauses. The paper (\cite{minsat}) proposes a branch-and-bound
+of satisfied soft clauses. The paper (Li C, Zhu Z, Manya F, Simon L, Minimum Satisfiability and its
+Applications) proposes a branch-and-bound
 algorithm, called \emph{MinSatz}, for Weighted Partial MinSAT equipped with a
 novel bounding technique, and reports on an emperical investigation. In the next
 sub-section, we cover some preliminaries and introduce the MinSatz algorithm as
@@ -57,7 +58,7 @@ undirected graph follow the usual definitions and reader is referred to the
 paper for formal definitions.
 
 MinSatz can be seen as an extension to the famed Davis-Putnam-Logemann-Loveland
-(DPLL \cite{dpll}) algorithm for propositional CNF-SAT solving. Algorithm 1
+(DPLL) algorithm for propositional CNF-SAT solving. Algorithm 1
 shows the pseudo-code for DPLL. 
 \begin{algorithm}
  \SetAlgoLined 
@@ -237,7 +238,7 @@ calculation is adjusted for the fact that MinSAT returns -1
 
 \subsection{Implementation}
 We have implemented DPLL and MinSatzEE570 in racket (a dialect of Scheme). A
-generic term rewrite system described in \cite{rewrite} has been used to
+generic term rewrite system described in the class has been used to
 simplify formula during unit propagation. We evaluated MinSAT by varying the
 schemes of over-estimation between 1. A naive scheme which assumes all
 soft-constraints that are not yet satisfied or unsatisfied, to be satisfiable,

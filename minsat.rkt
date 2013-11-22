@@ -216,7 +216,7 @@
                    (lb2 (second modellb2)))
               (if (> lb2 reallb1) modellb2 modellb1))))))
 
-(define (sat-solve hcs scs)
+(define (minsat-solve hcs scs)
   (with-handlers ([(lambda (v) (eq? v UNSAT)) 
                    (lambda (v) (display "UNSAT\n"))])
     (let* ((x (dpll-minsat hcs scs '() 0))
